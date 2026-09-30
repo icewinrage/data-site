@@ -1895,9 +1895,8 @@ ui:MakeDivider(AnnounceSection)
 ui:MakeLabel(AnnounceSection, "⚠️ Отправлять объявления может только владелец скрипта")
 
 -- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ 8. SETTINGS ═══════════════════════════════
+-- ══════════════════════ 8. SETTINGS (продолжение) ═══════════════════
 -- ═══════════════════════════════════════════════════════════════════
-local SettingsTab = ui:MakeTab("SETTINGS")
 
 local SettingsGUISection = ui:MakeSection(SettingsTab, "⚙️ Настройки GUI")
 
