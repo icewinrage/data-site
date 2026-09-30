@@ -63,10 +63,9 @@ end
 -- ANTI RE-INJECT
 -- ═══════════════════════════════════════════
 local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-local existing = PlayerGui:FindFirstChild("VentureLinUI")
 local existingMain = PlayerGui:FindFirstChild("VentureLoadingGui")
 
-if existing or existingMain then
+if existingMain then
     -- Уже запущено — уведомление и выход
     pcall(function()
         game:GetService("StarterGui"):SetCore("SendNotification", {
