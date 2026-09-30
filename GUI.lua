@@ -1,15 +1,9 @@
 --[[
     ═══════════════════════════════════════════════════════════════════════
-    VENTURE AOT v2.0 — Custom UI Library (Self-Contained)
+    VENTURE AOT v2.0 — Universal GUI (No LinUI / No external libs)
     ═══════════════════════════════════════════════════════════════════════
-    Автор: Data Hub Team
-    Работает: Xeno / Delta / Solara / Arceus X / Wave / Synapse / Krnl
-    Особенности:
-        • 4 темы: Dark, Purple, Red, White
-        • Collapsible Sections (скрытие настроек)
-        • 11 элементов UI
-        • Draggable + Toggle keybind + автосохранение
-        • Интеграция с _G.Venture.F.Settings (Functions.lua)
+    Работает на: Xeno / Delta / Solara / Arceus X / Wave / Krnl / Synapse / Fluxus / Oxygen / Codex
+    Не требует: Drawing, gethui, syn.protect_gui, LinUI, Linoria, WindUI
     ═══════════════════════════════════════════════════════════════════════
 --]]
 
@@ -23,58 +17,43 @@ local CoreGui          = game:GetService("CoreGui")
 local LocalPlayer      = Players.LocalPlayer
 local PlayerGui        = LocalPlayer:WaitForChild("PlayerGui")
 
--- ==================== F (Functions) HOOK ====================
+-- ==================== F HOOK ====================
 local F = (_G.Venture and _G.Venture.F) or {}
 local S = F.Settings or {}
 _G.Venture = _G.Venture or {}
 _G.Venture.F = F
+S = F.Settings or S
 
--- ==================== UTILS ====================
-local UI = {}
+-- ==================== CONFIG ====================
+local CONFIG_FILE = "VentureAOT_GUI_Config.json"
+local Config = {
+    Theme = "Dark",
+    Keybind = "K",
+    Size = {620, 440},
+    Position = {0.5, 0.5},
+    Opacity = 1,
+    AutoSave = true,
+    Minimized = false,
+}
 
-local function New(class, props, parent)
-    local o = Instance.new(class)
-    for k, v in pairs(props or {}) do o[k] = v end
-    if parent then o.Parent = parent end
-    return o
+local function LoadConfig()
+    if not (isfile and readfile and isfile(CONFIG_FILE)) then return end
+    local ok, raw = pcall(readfile, CONFIG_FILE)
+    if not ok or not raw then return end
+    local ok2, data = pcall(function() return HttpService:JSONDecode(raw) end)
+    if ok2 and type(data) == "table" then
+        for k, v in pairs(data) do Config[k] = v end
+    end
 end
 
-local function Tween(obj, time, props, style, dir)
-    local info = TweenInfo.new(time or 0.25, style or Enum.EasingStyle.Quart, dir or Enum.EasingDirection.Out)
-    local t = TweenService:Create(obj, info, props)
-    t:Play()
-    return t
+local function SaveConfig()
+    if not (writefile and Config.AutoSave) then return end
+    pcall(function()
+        writefile(CONFIG_FILE, HttpService:JSONEncode(Config))
+    end)
 end
 
-local function Round(obj, r)
-    New("UICorner", { CornerRadius = UDim.new(0, r or 6) }, obj)
-end
-
-local function Stroke(obj, color, thickness, transparency)
-    New("UIStroke", {
-        Color = color or Color3.fromRGB(60, 60, 80),
-        Thickness = thickness or 1,
-        Transparency = transparency or 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-    }, obj)
-end
-
-local function Gradient(obj, c1, c2, rot)
-    New("UIGradient", {
-        Color = ColorSequence.new(c1, c2),
-        Rotation = rot or 90,
-    }, obj)
-end
-
-local function Pad(obj, px, py)
-    px = px or 0; py = py or 0
-    New("UIPadding", {
-        PaddingTop = UDim.new(0, py),
-        PaddingBottom = UDim.new(0, py),
-        PaddingLeft = UDim.new(0, px),
-        PaddingRight = UDim.new(0, px),
-    }, obj)
-end
+LoadConfig()
 
 -- ==================== THEMES ====================
 local Themes = {
@@ -120,34 +99,42 @@ local Themes = {
     },
 }
 
--- ==================== CONFIG ====================
-local CONFIG_FILE = "VentureAOT_GUI_Config.json"
-local Config = {
-    Theme = "Dark",
-    Keybind = "K",
-    Size = {620, 440},
-    Position = {0.5, 0.5},
-    Opacity = 1,
-    AutoSave = true,
-    Minimized = false,
-}
-
-local function LoadConfig()
-    if not (isfile and isfile(CONFIG_FILE)) then return end
-    local ok, data = pcall(function() return HttpService:JSONDecode(readfile(CONFIG_FILE)) end)
-    if ok and type(data) == "table" then
-        for k, v in pairs(data) do Config[k] = v end
-    end
+-- ==================== UTILS ====================
+local function New(class, props, parent)
+    local o = Instance.new(class)
+    for k, v in pairs(props or {}) do o[k] = v end
+    if parent then o.Parent = parent end
+    return o
 end
 
-local function SaveConfig()
-    if not (writefile and Config.AutoSave) then return end
-    pcall(function()
-        writefile(CONFIG_FILE, HttpService:JSONEncode(Config))
-    end)
+local function Tween(obj, time, props, style, dir)
+    local info = TweenInfo.new(time or 0.2, style or Enum.EasingStyle.Quart, dir or Enum.EasingDirection.Out)
+    local t = TweenService:Create(obj, info, props)
+    t:Play()
+    return t
 end
 
-LoadConfig()
+local function Round(obj, r)
+    New("UICorner", { CornerRadius = UDim.new(0, r or 6) }, obj)
+end
+
+local function Stroke(obj, color, thickness, transparency)
+    New("UIStroke", {
+        Color = color or Color3.fromRGB(60, 60, 80),
+        Thickness = thickness or 1,
+        Transparency = transparency or 0.5,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+    }, obj)
+end
+
+local function Pad(obj, px, py)
+    New("UIPadding", {
+        PaddingTop = UDim.new(0, py or 0),
+        PaddingBottom = UDim.new(0, py or 0),
+        PaddingLeft = UDim.new(0, px or 0),
+        PaddingRight = UDim.new(0, px or 0),
+    }, obj)
+end
 
 -- ==================== LIBRARY ====================
 local Library = {
@@ -160,7 +147,6 @@ local Library = {
     ToggleKey = Enum.KeyCode[Config.Keybind] or Enum.KeyCode.K,
     Visible = true,
 }
-UI.__index = Library
 
 function Library:Register(el)
     table.insert(self.Elements, el)
@@ -178,23 +164,16 @@ end
 
 function Library:RefreshTheme()
     local t = self.Theme
-    if self.MainFrame then Tween(self.MainFrame, 0.25, { BackgroundColor3 = t.Secondary }) end
-    if self.Header then Tween(self.Header, 0.25, { BackgroundColor3 = t.Background }) end
-    if self.Sidebar then Tween(self.Sidebar, 0.25, { BackgroundColor3 = t.Background }) end
-    if self.Content then Tween(self.Content, 0.25, { BackgroundColor3 = t.Secondary }) end
-    if self.Footer then Tween(self.Footer, 0.25, { BackgroundColor3 = t.Background }) end
+    if self.MainFrame then Tween(self.MainFrame, 0.2, { BackgroundColor3 = t.Secondary }) end
+    if self.Header then Tween(self.Header, 0.2, { BackgroundColor3 = t.Background }) end
+    if self.Sidebar then Tween(self.Sidebar, 0.2, { BackgroundColor3 = t.Background }) end
+    if self.Content then Tween(self.Content, 0.2, { BackgroundColor3 = t.Secondary }) end
+    if self.Footer then Tween(self.Footer, 0.2, { BackgroundColor3 = t.Background }) end
     for _, el in ipairs(self.Elements) do
         if el.Refresh then pcall(el.Refresh, el, t) end
     end
-    for _, tab in ipairs(self.Tabs) do
-        if tab.Refresh then pcall(tab.Refresh, tab, t) end
-        for _, el in ipairs(tab.Elements or {}) do
-            if el.Refresh then pcall(el.Refresh, el, t) end
-        end
-    end
 end
 
--- ==================== NOTIFICATION ====================
 function Library:Notify(opts)
     opts = opts or {}
     local title = opts.Title or "Venture"
@@ -202,8 +181,8 @@ function Library:Notify(opts)
     local dur   = opts.Duration or 4
 
     local n = New("Frame", {
-        Size = UDim2.new(0, 320, 0, 74),
-        Position = UDim2.new(1, 340, 1, -90 - (#self.Notifications * 84)),
+        Size = UDim2.new(0, 300, 0, 70),
+        Position = UDim2.new(1, 320, 1, -80 - (#self.Notifications * 80)),
         BackgroundColor3 = self.Theme.Secondary,
         BorderSizePixel = 0,
         Parent = self.ScreenGui,
@@ -218,25 +197,25 @@ function Library:Notify(opts)
     })
     New("TextLabel", {
         Size = UDim2.new(1, -20, 0, 22),
-        Position = UDim2.new(0, 14, 0, 10),
+        Position = UDim2.new(0, 14, 0, 8),
         BackgroundTransparency = 1, Text = title,
-        TextColor3 = self.Theme.Accent, TextSize = 16,
+        TextColor3 = self.Theme.Accent, TextSize = 15,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Left, Parent = n,
     })
     New("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 38),
-        Position = UDim2.new(0, 14, 0, 32),
+        Size = UDim2.new(1, -20, 0, 34),
+        Position = UDim2.new(0, 14, 0, 30),
         BackgroundTransparency = 1, Text = text,
-        TextColor3 = self.Theme.Text, TextSize = 13,
+        TextColor3 = self.Theme.Text, TextSize = 12,
         Font = Enum.Font.Gotham, TextWrapped = true,
         TextXAlignment = Enum.TextXAlignment.Left, Parent = n,
     })
     table.insert(self.Notifications, n)
-    Tween(n, 0.35, { Position = UDim2.new(1, -340, 1, -90 - (#self.Notifications - 1) * 84) })
+    Tween(n, 0.3, { Position = UDim2.new(1, -320, 1, -80 - (#self.Notifications - 1) * 80) })
 
     task.delay(dur, function()
-        Tween(n, 0.3, { Position = UDim2.new(1, 340, 1, n.Position.Y.Offset) })
+        Tween(n, 0.3, { Position = UDim2.new(1, 320, 1, n.Position.Y.Offset) })
         task.wait(0.35)
         if n.Parent then n:Destroy() end
         for i, x in ipairs(self.Notifications) do
@@ -249,7 +228,7 @@ end
 function Library:MakeWindow(opts)
     opts = opts or {}
     local title = opts.Title or "VENTURE AOT"
-    local subtitle = opts.Subtitle or "by Data Hub Team"
+    local subtitle = opts.Subtitle or ""
 
     local gui = New("ScreenGui", {
         Name = "VentureAOT_GUI",
@@ -257,8 +236,9 @@ function Library:MakeWindow(opts)
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
         IgnoreGuiInset = true,
     })
-    pcall(function() gui.Parent = CoreGui end)
-    if not gui.Parent then gui.Parent = PlayerGui end
+    -- Безопасный парент: CoreGui -> PlayerGui
+    local ok = pcall(function() gui.Parent = CoreGui end)
+    if not ok or not gui.Parent then gui.Parent = PlayerGui end
     self.ScreenGui = gui
 
     local main = New("Frame", {
@@ -405,17 +385,15 @@ function Library:MakeWindow(opts)
         Size = UDim2.new(1, -20, 1, 0),
         Position = UDim2.new(0, 10, 0, 0),
         BackgroundTransparency = 1,
-        Text = "Venture AOT v2.0 | by __TheDark | discord.gg/UHCwX78Npc",
+        Text = "Venture AOT v2.0 | by __TheDark",
         TextColor3 = self.Theme.SubText, TextSize = 10,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left, Parent = footer,
     })
     self.Footer = footer
 
-    -- Drag
     self:MakeDraggable(header, main)
 
-    -- Keybind toggle
     UserInputService.InputBegan:Connect(function(input, gp)
         if gp then return end
         if input.KeyCode == self.ToggleKey then self:Toggle() end
@@ -449,7 +427,6 @@ function Library:MakeDraggable(handle, frame)
                 startPos.X.Scale, startPos.X.Offset + delta.X,
                 startPos.Y.Scale, startPos.Y.Offset + delta.Y
             )
-            Config.Position = {frame.Position.X.Scale + frame.Position.X.Offset / 1000, frame.Position.Y.Scale + frame.Position.Y.Offset / 1000}
         end
     end)
 end
@@ -458,16 +435,9 @@ function Library:Toggle()
     self.Visible = not self.Visible
     if self.Visible then
         self.MainFrame.Visible = true
-        self.MainFrame.Size = UDim2.new(0, Config.Size[1] * 0.85, 0, Config.Size[2] * 0.85)
-        Tween(self.MainFrame, 0.35, {
-            Size = UDim2.new(0, Config.Size[1], 0, Config.Size[2]),
-            BackgroundTransparency = 1 - Config.Opacity,
-        }, Enum.EasingStyle.Back)
+        Tween(self.MainFrame, 0.3, { BackgroundTransparency = 1 - Config.Opacity })
     else
-        Tween(self.MainFrame, 0.25, {
-            Size = UDim2.new(0, Config.Size[1] * 0.85, 0, Config.Size[2] * 0.85),
-            BackgroundTransparency = 1,
-        })
+        Tween(self.MainFrame, 0.25, { BackgroundTransparency = 1 })
         task.delay(0.3, function() self.MainFrame.Visible = false end)
     end
 end
@@ -559,7 +529,7 @@ function Library:MakeTab(name)
     return tab
 end
 
--- ==================== COLLAPSIBLE SECTION ====================
+-- ==================== SECTION (COLLAPSIBLE) ====================
 function Library:MakeSection(tab, name)
     local section = New("Frame", {
         Size = UDim2.new(1, 0, 0, 30),
@@ -586,7 +556,6 @@ function Library:MakeSection(tab, name)
         TextXAlignment = Enum.TextXAlignment.Left, Parent = section,
     })
 
-    -- Container for elements
     local container = New("Frame", {
         Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -605,21 +574,7 @@ function Library:MakeSection(tab, name)
     btn.MouseButton1Click:Connect(function()
         collapsed = not collapsed
         Tween(arrow, 0.2, { Rotation = collapsed and -90 or 0 })
-        if collapsed then
-            Tween(container, 0.25, { Size = UDim2.new(1, 0, 0, 0) })
-            task.delay(0.25, function() container.Visible = false end)
-        else
-            container.Visible = true
-            local h = cLayout.AbsoluteContentSize.Y
-            Tween(container, 0.25, { Size = UDim2.new(1, 0, 0, h) })
-        end
-    end)
-
-    -- Auto update height
-    cLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        if not collapsed then
-            container.Size = UDim2.new(1, 0, 0, cLayout.AbsoluteContentSize.Y)
-        end
+        container.Visible = not collapsed
     end)
 
     local element = {
@@ -637,12 +592,11 @@ end
 
 -- ==================== ELEMENTS ====================
 
--- ░░░░░░░░░░░░░░░░ TOGGLE (Switch, стиль Fluent) ░░░░░░░░░░░░░░░░
+-- TOGGLE
 function Library:MakeToggle(parent, opts)
     opts = opts or {}
     local name    = opts.Name or "Toggle"
     local default = opts.Default or false
-    local flag    = opts.Flag
     local callback = opts.Callback or function() end
 
     local row = New("Frame", {
@@ -695,7 +649,7 @@ function Library:MakeToggle(parent, opts)
     btn.MouseButton1Click:Connect(function() setState(not state, true) end)
 
     local el = {
-        Name = name, Flag = flag,
+        Name = name,
         Set = function(v) setState(v, true) end,
         Get = function() return state end,
         Refresh = function(_, t)
@@ -708,7 +662,7 @@ function Library:MakeToggle(parent, opts)
     return el
 end
 
--- ░░░░░░░░░░░░░░░░ BUTTON (с subtext, стиль Fluent) ░░░░░░░░░░░░░░░░
+-- BUTTON
 function Library:MakeButton(parent, opts)
     opts = opts or {}
     local name     = opts.Name or "Button"
@@ -753,8 +707,6 @@ function Library:MakeButton(parent, opts)
         Tween(btn, 0.15, { BackgroundTransparency = 0.4, BackgroundColor3 = danger and Color3.fromRGB(120, 30, 30) or self.Theme.Element })
     end)
     btn.MouseButton1Click:Connect(function()
-        Tween(btn, 0.1, { Size = UDim2.new(1, -4, 0, btn.Size.Y.Offset - 2) })
-        task.delay(0.1, function() Tween(btn, 0.1, { Size = UDim2.new(1, 0, 0, btn.Size.Y.Offset + 2) }) end)
         pcall(callback)
     end)
 
@@ -769,7 +721,7 @@ function Library:MakeButton(parent, opts)
     return el
 end
 
--- ░░░░░░░░░░░░░░░░ SLIDER (с числом, стиль Orion) ░░░░░░░░░░░░░░░░
+-- SLIDER
 function Library:MakeSlider(parent, opts)
     opts = opts or {}
     local name     = opts.Name or "Slider"
@@ -778,7 +730,6 @@ function Library:MakeSlider(parent, opts)
     local default  = opts.Default or min
     local step     = opts.Step or 1
     local suffix   = opts.Suffix or ""
-    local flag     = opts.Flag
     local callback = opts.Callback or function() end
 
     local row = New("Frame", {
@@ -868,7 +819,7 @@ function Library:MakeSlider(parent, opts)
     end)
 
     local el = {
-        Name = name, Flag = flag,
+        Name = name,
         Set = function(v) setValue(v, true) end,
         Get = function() return value end,
         Refresh = function(_, t)
@@ -883,13 +834,12 @@ function Library:MakeSlider(parent, opts)
     return el
 end
 
--- ░░░░░░░░░░░░░░░░ DROPDOWN (со скроллом) ░░░░░░░░░░░░░░░░
+-- DROPDOWN (упрощённый, без ScrollingFrame внутри)
 function Library:MakeDropdown(parent, opts)
     opts = opts or {}
     local name     = opts.Name or "Dropdown"
     local options  = opts.Options or {}
     local default  = opts.Default or (options[1] or "")
-    local flag     = opts.Flag
     local callback = opts.Callback or function() end
 
     local row = New("Frame", {
@@ -927,20 +877,17 @@ function Library:MakeDropdown(parent, opts)
         AutoButtonColor = false, Parent = row,
     })
 
-    local container = New("ScrollingFrame", {
+    local container = New("Frame", {
         Size = UDim2.new(1, 0, 0, 0),
         Position = UDim2.new(0, 0, 1, 6),
         BackgroundColor3 = self.Theme.Background,
         BorderSizePixel = 0, Visible = false,
-        ScrollBarThickness = 3,
-        ScrollBarImageColor3 = self.Theme.Accent,
-        CanvasSize = UDim2.new(0, 0, 0, 0),
         ZIndex = 20, Parent = row,
     })
     Round(container, 6)
     Stroke(container, self.Theme.Accent, 1, 0.5)
     Pad(container, 4, 4)
-    local listLayout = New("UIListLayout", {
+    New("UIListLayout", {
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 3), Parent = container,
     })
@@ -953,7 +900,7 @@ function Library:MakeDropdown(parent, opts)
         end
         for _, opt in ipairs(options) do
             local optBtn = New("TextButton", {
-                Size = UDim2.new(1, 0, 0, 26),
+                Size = UDim2.new(1, 0, 0, 24),
                 BackgroundColor3 = self.Theme.Element,
                 BackgroundTransparency = 0.6,
                 Text = opt, TextColor3 = self.Theme.Text, TextSize = 12,
@@ -970,36 +917,23 @@ function Library:MakeDropdown(parent, opts)
             optBtn.MouseButton1Click:Connect(function()
                 selected.Text = opt
                 isOpen = false
-                Tween(container, 0.2, { Size = UDim2.new(1, 0, 0, 0) })
-                task.delay(0.2, function() container.Visible = false end)
+                container.Visible = false
                 Tween(arrow, 0.15, { Rotation = 0 })
                 pcall(callback, opt)
             end)
         end
-        container.CanvasSize = UDim2.new(0, 0, 0, #options * 29 + 8)
+        container.Size = UDim2.new(1, 0, 0, math.min(#options * 27 + 8, 160))
     end
     buildList()
 
-    local openBtn = New("TextButton", {
-        Size = UDim2.new(1, 0, 0, 46),
-        BackgroundTransparency = 1, Text = "", Parent = row,
-    })
-    openBtn.MouseButton1Click:Connect(function()
+    selected.MouseButton1Click:Connect(function()
         isOpen = not isOpen
-        if isOpen then
-            container.Visible = true
-            local h = math.min(#options * 29 + 8, 160)
-            Tween(container, 0.2, { Size = UDim2.new(1, 0, 0, h) })
-            Tween(arrow, 0.15, { Rotation = 180 })
-        else
-            Tween(container, 0.2, { Size = UDim2.new(1, 0, 0, 0) })
-            Tween(arrow, 0.15, { Rotation = 0 })
-            task.delay(0.2, function() container.Visible = false end)
-        end
+        container.Visible = isOpen
+        Tween(arrow, 0.15, { Rotation = isOpen and 180 or 0 })
     end)
 
     local el = {
-        Name = name, Flag = flag,
+        Name = name,
         Set = function(v) selected.Text = v; callback(v) end,
         Get = function() return selected.Text end,
         SetOptions = function(newOpts)
@@ -1016,13 +950,12 @@ function Library:MakeDropdown(parent, opts)
     return el
 end
 
--- ░░░░░░░░░░░░░░░░ TEXTBOX ░░░░░░░░░░░░░░░░
+-- TEXTBOX
 function Library:MakeTextbox(parent, opts)
     opts = opts or {}
     local name        = opts.Name or "Input"
     local placeholder = opts.Placeholder or "Введите..."
     local default     = opts.Default or ""
-    local flag        = opts.Flag
     local callback    = opts.Callback or function() end
 
     local row = New("Frame", {
@@ -1058,7 +991,7 @@ function Library:MakeTextbox(parent, opts)
     box.FocusLost:Connect(function(enter) pcall(callback, box.Text, enter) end)
 
     local el = {
-        Name = name, Flag = flag,
+        Name = name,
         Set = function(v) box.Text = v; callback(v) end,
         Get = function() return box.Text end,
         Refresh = function(_, t)
@@ -1072,12 +1005,11 @@ function Library:MakeTextbox(parent, opts)
     return el
 end
 
--- ░░░░░░░░░░░░░░░░ KEYBIND ░░░░░░░░░░░░░░░░
+-- KEYBIND
 function Library:MakeKeybind(parent, opts)
     opts = opts or {}
     local name     = opts.Name or "Keybind"
     local default  = opts.Default or "K"
-    local flag     = opts.Flag
     local callback = opts.Callback or function() end
 
     local row = New("Frame", {
@@ -1129,7 +1061,7 @@ function Library:MakeKeybind(parent, opts)
     end)
 
     local el = {
-        Name = name, Flag = flag,
+        Name = name,
         Set = function(v) currentKey = v; keyBtn.Text = v; callback(v) end,
         Get = function() return currentKey end,
         Refresh = function(_, t)
@@ -1143,12 +1075,11 @@ function Library:MakeKeybind(parent, opts)
     return el
 end
 
--- ░░░░░░░░░░░░░░░░ COLORPICKER (RGB + Hex, стиль Orion) ░░░░░░░░░░░░░░░░
+-- COLORPICKER (упрощённый: 3 слайдера R/G/B)
 function Library:MakeColorpicker(parent, opts)
     opts = opts or {}
     local name     = opts.Name or "Color"
     local default  = opts.Default or Color3.fromRGB(255, 80, 80)
-    local flag     = opts.Flag
     local callback = opts.Callback or function() end
 
     local row = New("Frame", {
@@ -1177,99 +1108,72 @@ function Library:MakeColorpicker(parent, opts)
     Round(swatch, 4)
     Stroke(swatch, Color3.fromRGB(255, 255, 255), 1, 0.5)
 
-    local currentColor = default
-    local popupOpen = false
+    local current = default
     local popup = nil
 
-    local function setColor(c, fire)
-        currentColor = c
-        swatch.BackgroundColor3 = c
-        if popup and popup.preview then popup.preview.BackgroundColor3 = c end
-        if fire then pcall(callback, c) end
-    end
-
     local function closePopup()
-        if popup and popup.frame then
-            popup.frame:Destroy()
-        end
-        popup = nil
-        popupOpen = false
+        if popup then popup:Destroy(); popup = nil end
     end
 
     local function openPopup()
-        if popupOpen then closePopup() return end
-        popupOpen = true
+        if popup then closePopup(); return end
         local p = New("Frame", {
-            Size = UDim2.new(0, 220, 0, 200),
+            Size = UDim2.new(0, 200, 0, 150),
             Position = UDim2.new(1, 10, 0, 0),
             BackgroundColor3 = self.Theme.Background,
-            BorderSizePixel = 0, ZIndex = 50,
-            Parent = row,
+            BorderSizePixel = 0, ZIndex = 50, Parent = row,
         })
         Round(p, 8)
         Stroke(p, self.Theme.Accent, 1.5, 0.3)
 
-        p.preview = New("Frame", {
-            Size = UDim2.new(1, -20, 0, 30),
+        local preview = New("Frame", {
+            Size = UDim2.new(1, -20, 0, 26),
             Position = UDim2.new(0, 10, 0, 10),
-            BackgroundColor3 = currentColor,
+            BackgroundColor3 = current,
             BorderSizePixel = 0, Parent = p,
         })
-        Round(p.preview, 4)
+        Round(preview, 4)
 
-        -- RGB sliders
-        local sliders = {}
-        local rgbNames = {"R", "G", "B"}
-        local rgbVals = {currentColor.R, currentColor.G, currentColor.B}
+        local vals = {current.R, current.G, current.B}
+        local names = {"R", "G", "B"}
+
+        local function apply()
+            current = Color3.new(vals[1], vals[2], vals[3])
+            swatch.BackgroundColor3 = current
+            preview.BackgroundColor3 = current
+            pcall(callback, current)
+        end
+
         for i = 1, 3 do
-            local sy = 50 + (i - 1) * 30
-            local lbl = New("TextLabel", {
-                Size = UDim2.new(0, 20, 0, 20),
+            local sy = 46 + (i - 1) * 28
+            New("TextLabel", {
+                Size = UDim2.new(0, 16, 0, 20),
                 Position = UDim2.new(0, 10, 0, sy),
-                BackgroundTransparency = 1, Text = rgbNames[i],
+                BackgroundTransparency = 1, Text = names[i],
                 TextColor3 = self.Theme.Accent, TextSize = 12,
                 Font = Enum.Font.GothamBold, Parent = p,
             })
-            local tr = New("Frame", {
+            local track = New("Frame", {
                 Size = UDim2.new(1, -50, 0, 8),
-                Position = UDim2.new(0, 34, 0, sy + 6),
+                Position = UDim2.new(0, 30, 0, sy + 6),
                 BackgroundColor3 = self.Theme.Stroke,
                 BorderSizePixel = 0, Parent = p,
             })
-            Round(tr, 4)
-            local fl = New("Frame", {
-                Size = UDim2.new(rgbVals[i], 0, 1, 0),
+            Round(track, 4)
+            local fill = New("Frame", {
+                Size = UDim2.new(vals[i], 0, 1, 0),
                 BackgroundColor3 = self.Theme.Accent,
-                BorderSizePixel = 0, Parent = tr,
+                BorderSizePixel = 0, Parent = track,
             })
-            Round(fl, 4)
-            local kn = New("Frame", {
-                Size = UDim2.new(0, 12, 0, 12),
-                Position = UDim2.new(rgbVals[i], -6, 0.5, -6),
-                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                BorderSizePixel = 0, Parent = tr,
-            })
-            Round(kn, 6)
-
-            local valLbl = New("TextLabel", {
-                Size = UDim2.new(0, 30, 0, 20),
-                Position = UDim2.new(1, -32, 0, sy),
-                BackgroundTransparency = 1, Text = tostring(math.floor(rgbVals[i] * 255)),
-                TextColor3 = self.Theme.Text, TextSize = 11,
-                Font = Enum.Font.Gotham, Parent = p,
-            })
-
+            Round(fill, 4)
             local dragging = false
-            local function update(inputX)
-                local pct = math.clamp((inputX - tr.AbsolutePosition.X) / tr.AbsoluteSize.X, 0, 1)
-                fl.Size = UDim2.new(pct, 0, 1, 0)
-                kn.Position = UDim2.new(pct, -6, 0.5, -6)
-                rgbVals[i] = pct
-                valLbl.Text = tostring(math.floor(pct * 255))
-                local c = Color3.new(rgbVals[1], rgbVals[2], rgbVals[3])
-                setColor(c, true)
+            local function update(x)
+                local pct = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+                fill.Size = UDim2.new(pct, 0, 1, 0)
+                vals[i] = pct
+                apply()
             end
-            tr.InputBegan:Connect(function(inp)
+            track.InputBegan:Connect(function(inp)
                 if inp.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = true
                     update(inp.Position.X)
@@ -1285,50 +1189,25 @@ function Library:MakeColorpicker(parent, opts)
             end)
         end
 
-        -- Hex input
-        New("TextLabel", {
-            Size = UDim2.new(0, 30, 0, 20),
-            Position = UDim2.new(0, 10, 0, 148),
-            BackgroundTransparency = 1, Text = "HEX",
-            TextColor3 = self.Theme.Accent, TextSize = 11,
-            Font = Enum.Font.GothamBold, Parent = p,
-        })
-        local hexBox = New("TextBox", {
-            Size = UDim2.new(1, -60, 0, 22),
-            Position = UDim2.new(0, 40, 0, 146),
-            BackgroundColor3 = self.Theme.Element,
-            Text = string.upper(currentColor:ToHex()),
-            TextColor3 = self.Theme.Text, TextSize = 12,
-            Font = Enum.Font.Gotham, BorderSizePixel = 0,
-            ClearTextOnFocus = false, Parent = p,
-        })
-        Round(hexBox, 4)
-        Pad(hexBox, 4, 0)
-        hexBox.FocusLost:Connect(function()
-            local hex = hexBox.Text:gsub("#", "")
-            local ok, c = pcall(Color3.fromHex, hex)
-            if ok then setColor(c, true) end
-        end)
-
-        -- Close button
-        local closeP = New("TextButton", {
+        local close = New("TextButton", {
             Size = UDim2.new(1, -20, 0, 22),
-            Position = UDim2.new(0, 10, 0, 172),
+            Position = UDim2.new(0, 10, 0, 132),
             BackgroundColor3 = self.Theme.Accent,
-            Text = "Готово", TextColor3 = Color3.fromRGB(255,255,255),
+            Text = "OK", TextColor3 = Color3.fromRGB(255,255,255),
             TextSize = 12, Font = Enum.Font.GothamBold,
             AutoButtonColor = false, BorderSizePixel = 0, Parent = p,
         })
-        Round(closeP, 4)
-        closeP.MouseButton1Click:Connect(closePopup)
+        Round(close, 4)
+        close.MouseButton1Click:Connect(closePopup)
+        popup = p
     end
 
     swatch.MouseButton1Click:Connect(openPopup)
 
     local el = {
-        Name = name, Flag = flag,
-        Set = function(c) setColor(c, true) end,
-        Get = function() return currentColor end,
+        Name = name,
+        Set = function(c) current = c; swatch.BackgroundColor3 = c; callback(c) end,
+        Get = function() return current end,
         Refresh = function(_, t)
             label.TextColor3 = t.Text
             Tween(row, 0.2, { BackgroundColor3 = t.Element })
@@ -1338,7 +1217,7 @@ function Library:MakeColorpicker(parent, opts)
     return el
 end
 
--- ░░░░░░░░░░░░░░░░ LABEL ░░░░░░░░░░░░░░░░
+-- LABEL
 function Library:MakeLabel(parent, text)
     local lbl = New("TextLabel", {
         Size = UDim2.new(1, 0, 0, 22),
@@ -1355,7 +1234,7 @@ function Library:MakeLabel(parent, text)
     return el
 end
 
--- ░░░░░░░░░░░░░░░░ DIVIDER ░░░░░░░░░░░░░░░░
+-- DIVIDER
 function Library:MakeDivider(parent)
     local div = New("Frame", {
         Size = UDim2.new(1, 0, 0, 1),
@@ -1369,19 +1248,17 @@ function Library:MakeDivider(parent)
 end
 
 -- ═══════════════════════════════════════════════════════════════════
--- ═══════════════════ ИНИЦИАЛИЗАЦИЯ GUI ═════════════════════════════
+-- ИНИЦИАЛИЗАЦИЯ
 -- ═══════════════════════════════════════════════════════════════════
 
--- Проверка, что Functions.lua загружен
 if not (_G.Venture and _G.Venture.F and _G.Venture.F.Settings) then
-    warn("[Venture GUI] Functions.lua не загружен! GUI не может привязаться к настройкам.")
-    -- Всё равно создаём окно, но с заглушками
+    warn("[Venture GUI] Functions.lua не загружен — GUI работает в режиме заглушки.")
     F = { Settings = {}, State = {}, Notify = function(t, x) warn(t, x) end }
     S = F.Settings
     _G.Venture.F = F
+else
+    S = F.Settings
 end
-
-S = F.Settings or {}
 
 local ui = Library:MakeWindow({
     Title = "VENTURE AOT",
@@ -1389,11 +1266,10 @@ local ui = Library:MakeWindow({
 })
 
 -- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ 1. MAIN ═══════════════════════════════════
+-- 1. MAIN
 -- ═══════════════════════════════════════════════════════════════════
 local MainTab = ui:MakeTab("MAIN")
 
--- ░░ Auto Farm ░░
 local AutoFarmSection = ui:MakeSection(MainTab, "🌾 Auto Farm")
 
 ui:MakeToggle(AutoFarmSection, {
@@ -1405,7 +1281,6 @@ ui:MakeToggle(AutoFarmSection, {
 ui:MakeSlider(AutoFarmSection, {
     Name = "Orbit Speed",
     Min = 50, Max = 500, Default = S.AutoFarmOrbitSpeed or 220, Step = 5,
-    Suffix = "",
     Callback = function(v) S.AutoFarmOrbitSpeed = v end,
 })
 
@@ -1436,7 +1311,6 @@ ui:MakeSlider(AutoFarmSection, {
     Callback = function(v) S.AutoFarmResponsiveness = v end,
 })
 
--- ░░ Auto Heal ░░
 local AutoHealSection = ui:MakeSection(MainTab, "💚 Auto Heal")
 
 ui:MakeToggle(AutoHealSection, {
@@ -1452,7 +1326,6 @@ ui:MakeSlider(AutoHealSection, {
     Callback = function(v) S.AutoHealThreshold = v end,
 })
 
--- ░░ Hitbox ░░
 local HitboxSection = ui:MakeSection(MainTab, "📦 Hitbox Expander")
 
 ui:MakeToggle(HitboxSection, {
@@ -1474,200 +1347,132 @@ ui:MakeDropdown(HitboxSection, {
 ui:MakeSlider(HitboxSection, {
     Name = "Size X",
     Min = 5, Max = 500, Default = S.HitboxSize and S.HitboxSize.X or 300, Step = 5,
-    Suffix = "",
-    Callback = function(v)
-        S.HitboxSize = Vector3.new(v, S.HitboxSize.Y, S.HitboxSize.Z)
-    end,
+    Callback = function(v) S.HitboxSize = Vector3.new(v, S.HitboxSize.Y, S.HitboxSize.Z) end,
 })
-
 ui:MakeSlider(HitboxSection, {
     Name = "Size Y",
     Min = 5, Max = 500, Default = S.HitboxSize and S.HitboxSize.Y or 200, Step = 5,
-    Suffix = "",
-    Callback = function(v)
-        S.HitboxSize = Vector3.new(S.HitboxSize.X, v, S.HitboxSize.Z)
-    end,
+    Callback = function(v) S.HitboxSize = Vector3.new(S.HitboxSize.X, v, S.HitboxSize.Z) end,
 })
-
 ui:MakeSlider(HitboxSection, {
     Name = "Size Z",
     Min = 5, Max = 500, Default = S.HitboxSize and S.HitboxSize.Z or 300, Step = 5,
-    Suffix = "",
-    Callback = function(v)
-        S.HitboxSize = Vector3.new(S.HitboxSize.X, S.HitboxSize.Y, v)
-    end,
+    Callback = function(v) S.HitboxSize = Vector3.new(S.HitboxSize.X, S.HitboxSize.Y, v) end,
 })
 
-ui:MakeLabel(HitboxSection, "🎯 Hitbox Parts (какие части расширять)")
+ui:MakeLabel(HitboxSection, "🎯 Hitbox Parts")
 
 ui:MakeToggle(HitboxSection, {
-    Name = "Nape (затылок)",
-    Default = S.HitboxParts and S.HitboxParts.Nape or true,
+    Name = "Nape", Default = S.HitboxParts and S.HitboxParts.Nape or true,
     Callback = function(v) S.HitboxParts.Nape = v end,
 })
 ui:MakeToggle(HitboxSection, {
-    Name = "Eyes (глаза)",
-    Default = S.HitboxParts and S.HitboxParts.Eyes or false,
+    Name = "Eyes", Default = S.HitboxParts and S.HitboxParts.Eyes or false,
     Callback = function(v) S.HitboxParts.Eyes = v end,
 })
 ui:MakeToggle(HitboxSection, {
-    Name = "Left Arm",
-    Default = S.HitboxParts and S.HitboxParts.LeftArm or false,
+    Name = "Left Arm", Default = S.HitboxParts and S.HitboxParts.LeftArm or false,
     Callback = function(v) S.HitboxParts.LeftArm = v end,
 })
 ui:MakeToggle(HitboxSection, {
-    Name = "Left Leg",
-    Default = S.HitboxParts and S.HitboxParts.LeftLeg or false,
+    Name = "Left Leg", Default = S.HitboxParts and S.HitboxParts.LeftLeg or false,
     Callback = function(v) S.HitboxParts.LeftLeg = v end,
 })
 ui:MakeToggle(HitboxSection, {
-    Name = "Right Arm",
-    Default = S.HitboxParts and S.HitboxParts.RightArm or false,
+    Name = "Right Arm", Default = S.HitboxParts and S.HitboxParts.RightArm or false,
     Callback = function(v) S.HitboxParts.RightArm = v end,
 })
 ui:MakeToggle(HitboxSection, {
-    Name = "Right Leg",
-    Default = S.HitboxParts and S.HitboxParts.RightLeg or false,
+    Name = "Right Leg", Default = S.HitboxParts and S.HitboxParts.RightLeg or false,
     Callback = function(v) S.HitboxParts.RightLeg = v end,
 })
 
 ui:MakeDivider(HitboxSection)
-
 ui:MakeToggle(HitboxSection, {
-    Name = "Show Visual",
-    Default = S.HitboxShowVisual or false,
+    Name = "Show Visual", Default = S.HitboxShowVisual or false,
     Callback = function(v) S.HitboxShowVisual = v end,
 })
-
 ui:MakeColorpicker(HitboxSection, {
-    Name = "Visual Color",
-    Default = S.HitboxVisualColor or Color3.fromRGB(255, 100, 200),
+    Name = "Visual Color", Default = S.HitboxVisualColor or Color3.fromRGB(255, 100, 200),
     Callback = function(c) S.HitboxVisualColor = c end,
 })
-
 ui:MakeSlider(HitboxSection, {
-    Name = "Visual Transparency",
-    Min = 0, Max = 1, Default = S.HitboxVisualTransparency or 0.6, Step = 0.05,
+    Name = "Visual Transparency", Min = 0, Max = 1,
+    Default = S.HitboxVisualTransparency or 0.6, Step = 0.05,
     Callback = function(v) S.HitboxVisualTransparency = v end,
 })
 
--- ░░ Noclip + FPS ░░
 local MiscMainSection = ui:MakeSection(MainTab, "⚙️ Movement & Performance")
 
 ui:MakeToggle(MiscMainSection, {
-    Name = "Noclip",
-    Default = S.Noclip or false,
+    Name = "Noclip", Default = S.Noclip or false,
     Callback = function(v)
         S.Noclip = v
-        if F.StartNoclip and v then F.StartNoclip() end
-        if F.StopNoclip and not v then F.StopNoclip() end
+        if v and F.StartNoclip then F.StartNoclip() end
+        if not v and F.StopNoclip then F.StopNoclip() end
     end,
 })
 
 ui:MakeToggle(MiscMainSection, {
-    Name = "FPS Booster",
-    Default = S.FPSBoosterEnabled or false,
+    Name = "FPS Booster", Default = S.FPSBoosterEnabled or false,
     Callback = function(v)
         S.FPSBoosterEnabled = v
-        if F.EnableFPSBooster and v then F.EnableFPSBooster() end
-        if F.DisableFPSBooster and not v then F.DisableFPSBooster() end
+        if v and F.EnableFPSBooster then F.EnableFPSBooster() end
+        if not v and F.DisableFPSBooster then F.DisableFPSBooster() end
     end,
 })
 
--- ░░ Быстрые действия ░░
-local QuickSection = ui:MakeSection(MainTab, "🛠️ Быстрые действия")
+local QuickSection = ui:MakeSection(MainTab, "🛠️ Quick Actions")
 
 ui:MakeButton(QuickSection, {
-    Name = "Rejoin Server",
-    Subtext = "Переподключиться к текущему серверу",
-    Callback = function()
-        if F.RejoinServer then F.RejoinServer() end
-    end,
+    Name = "Rejoin Server", Subtext = "Переподключиться к текущему серверу",
+    Callback = function() if F.RejoinServer then F.RejoinServer() end end,
 })
-
 ui:MakeButton(QuickSection, {
-    Name = "Join New Server",
-    Subtext = "Перейти на случайный сервер",
-    Callback = function()
-        if F.JoinNewServer then F.JoinNewServer() end
-    end,
+    Name = "Join New Server", Subtext = "Перейти на случайный сервер",
+    Callback = function() if F.JoinNewServer then F.JoinNewServer() end end,
 })
-
 ui:MakeButton(QuickSection, {
-    Name = "Copy Server ID",
-    Subtext = "Скопировать JobId в буфер обмена",
-    Callback = function()
-        if F.CopyServerId then F.CopyServerId() end
-    end,
+    Name = "Copy Server ID", Subtext = "Скопировать JobId",
+    Callback = function() if F.CopyServerId then F.CopyServerId() end end,
 })
 
 -- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ 2. ESP ═════════════════════════════════════
+-- 2. ESP
 -- ═══════════════════════════════════════════════════════════════════
 local ESPTab = ui:MakeTab("ESP")
+local ESPSection = ui:MakeSection(ESPTab, "👁️ Visuals")
 
-local ESPSection = ui:MakeSection(ESPTab, "👁️ Визуальные функции")
-
-ui:MakeToggle(ESPSection, {
-    Name = "Titan ESP",
-    Default = S.ESP or false,
-    Callback = function(v) S.ESP = v end,
-})
-
-ui:MakeToggle(ESPSection, {
-    Name = "Player ESP",
-    Default = S.PlayerESP or false,
-    Callback = function(v) S.PlayerESP = v end,
-})
-
-ui:MakeToggle(ESPSection, {
-    Name = "Shifter ESP",
-    Default = S.ShifterESP or false,
-    Callback = function(v) S.ShifterESP = v end,
-})
+ui:MakeToggle(ESPSection, { Name = "Titan ESP", Default = S.ESP or false,
+    Callback = function(v) S.ESP = v end })
+ui:MakeToggle(ESPSection, { Name = "Player ESP", Default = S.PlayerESP or false,
+    Callback = function(v) S.PlayerESP = v end })
+ui:MakeToggle(ESPSection, { Name = "Shifter ESP", Default = S.ShifterESP or false,
+    Callback = function(v) S.ShifterESP = v end })
 
 ui:MakeDivider(ESPSection)
-ui:MakeLabel(ESPSection, "🎨 Цвета")
-
-ui:MakeColorpicker(ESPSection, {
-    Name = "ESP Color",
-    Default = S.ESPColor or Color3.fromRGB(255, 60, 60),
-    Callback = function(c) S.ESPColor = c end,
-})
-
-ui:MakeColorpicker(ESPSection, {
-    Name = "Nape Color",
-    Default = S.NapeColor or Color3.fromRGB(80, 255, 120),
-    Callback = function(c) S.NapeColor = c end,
-})
-
-ui:MakeColorpicker(ESPSection, {
-    Name = "Target Color",
-    Default = S.TargetColor or Color3.fromRGB(255, 210, 60),
-    Callback = function(c) S.TargetColor = c end,
-})
+ui:MakeColorpicker(ESPSection, { Name = "ESP Color", Default = S.ESPColor or Color3.fromRGB(255, 60, 60),
+    Callback = function(c) S.ESPColor = c end })
+ui:MakeColorpicker(ESPSection, { Name = "Nape Color", Default = S.NapeColor or Color3.fromRGB(80, 255, 120),
+    Callback = function(c) S.NapeColor = c end })
+ui:MakeColorpicker(ESPSection, { Name = "Target Color", Default = S.TargetColor or Color3.fromRGB(255, 210, 60),
+    Callback = function(c) S.TargetColor = c end })
 
 -- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ 3. MISC ═══════════════════════════════════
+-- 3. MISC
 -- ═══════════════════════════════════════════════════════════════════
 local MiscTab = ui:MakeTab("MISC")
 
-local PlayerSection = ui:MakeSection(MiscTab, "🏃 Игрок")
-
+local PlayerSection = ui:MakeSection(MiscTab, "🏃 Player")
 ui:MakeSlider(PlayerSection, {
-    Name = "WalkSpeed",
-    Min = 16, Max = 200, Default = 16, Step = 2,
-    Suffix = " spd",
+    Name = "WalkSpeed", Min = 16, Max = 200, Default = 16, Step = 2,
     Callback = function(v)
         local c = LocalPlayer.Character
         if c and c:FindFirstChildOfClass("Humanoid") then c.Humanoid.WalkSpeed = v end
     end,
 })
-
 ui:MakeSlider(PlayerSection, {
-    Name = "JumpPower",
-    Min = 50, Max = 300, Default = 50, Step = 5,
-    Suffix = " jp",
+    Name = "JumpPower", Min = 50, Max = 300, Default = 50, Step = 5,
     Callback = function(v)
         local c = LocalPlayer.Character
         if c and c:FindFirstChildOfClass("Humanoid") then c.Humanoid.JumpPower = v end
@@ -1675,60 +1480,44 @@ ui:MakeSlider(PlayerSection, {
 })
 
 local AntiAFKSection = ui:MakeSection(MiscTab, "💤 Anti-AFK")
-
 ui:MakeToggle(AntiAFKSection, {
-    Name = "Enable Anti-AFK",
-    Default = S.AntiAFKEnabled or false,
+    Name = "Enable Anti-AFK", Default = S.AntiAFKEnabled or false,
     Callback = function(v)
         S.AntiAFKEnabled = v
-        if F.AntiAFKEnable and v then F.AntiAFKEnable() end
-        if F.AntiAFKDisable and not v then F.AntiAFKDisable() end
+        if v and F.AntiAFKEnable then F.AntiAFKEnable() end
+        if not v and F.AntiAFKDisable then F.AntiAFKDisable() end
     end,
 })
-
 ui:MakeDropdown(AntiAFKSection, {
-    Name = "Mode",
-    Options = {"Both", "Jump", "Move"},
+    Name = "Mode", Options = {"Both", "Jump", "Move"},
     Default = S.AntiAFKMode or "Both",
     Callback = function(v) S.AntiAFKMode = v end,
 })
-
 ui:MakeSlider(AntiAFKSection, {
-    Name = "Interval",
-    Min = 5, Max = 120, Default = S.AntiAFKInterval or 20, Step = 1,
+    Name = "Interval", Min = 5, Max = 120, Default = S.AntiAFKInterval or 20, Step = 1,
     Suffix = " sec",
     Callback = function(v) S.AntiAFKInterval = v end,
 })
 
 local SocialSection = ui:MakeSection(MiscTab, "🌐 Social")
-
 ui:MakeButton(SocialSection, {
-    Name = "Copy Discord Invite",
-    Subtext = "discord.gg/UHCwX78Npc",
-    Callback = function()
-        if F.CopyDiscord then F.CopyDiscord() end
-    end,
+    Name = "Copy Discord", Subtext = "discord.gg/UHCwX78Npc",
+    Callback = function() if F.CopyDiscord then F.CopyDiscord() end end,
 })
 
 -- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ 4. MOD DETECTOR ═══════════════════════════
+-- 4. MOD DETECTOR
 -- ═══════════════════════════════════════════════════════════════════
 local ModTab = ui:MakeTab("MOD DETECTOR")
-
 local ModSection = ui:MakeSection(ModTab, "🛡️ Mod Detector")
 
 ui:MakeToggle(ModSection, {
-    Name = "Auto-Kick on Mod",
-    Default = S.AutoKickOnMod or false,
+    Name = "Auto-Kick on Mod", Default = S.AutoKickOnMod or false,
     Callback = function(v) S.AutoKickOnMod = v end,
 })
-
 ui:MakeLabel(ModSection, "Mod Group: " .. tostring(S.ModGroupId or "—"))
-ui:MakeLabel(ModSection, "При обнаружении модератора все функции ставятся на паузу.")
-
 ui:MakeDivider(ModSection)
-ui:MakeLabel(ModSection, "📋 Список модераторов в сервере:")
-
+ui:MakeLabel(ModSection, "📋 Список модераторов:")
 local ModListLabel = ui:MakeLabel(ModSection, "Загрузка...")
 task.spawn(function()
     while task.wait(5) do
@@ -1740,111 +1529,75 @@ task.spawn(function()
         if #list > 0 then
             ModListLabel:Set("• " .. table.concat(list, "\n• "))
         else
-            ModListLabel:Set("Нет модераторов в сервере ✅")
+            ModListLabel:Set("Нет модераторов ✅")
         end
     end
 end)
 
 -- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ 5. STREAMER ═══════════════════════════════
+-- 5. STREAMER
 -- ═══════════════════════════════════════════════════════════════════
 local StreamerTab = ui:MakeTab("STREAMER")
-
 local StreamerSection = ui:MakeSection(StreamerTab, "🎥 Streamer Mode")
 
 ui:MakeToggle(StreamerSection, {
-    Name = "Enable Streamer Mode",
-    Default = S.StreamerEnabled or false,
+    Name = "Enable Streamer Mode", Default = S.StreamerEnabled or false,
     Callback = function(v)
-        if F.StreamerEnable and v then F.StreamerEnable() end
-        if F.StreamerDisable and not v then F.StreamerDisable() end
+        if v and F.StreamerEnable then F.StreamerEnable() end
+        if not v and F.StreamerDisable then F.StreamerDisable() end
     end,
 })
-
 ui:MakeToggle(StreamerSection, {
-    Name = "Hide KillFeed",
-    Default = S.StreamerHideKillFeed or false,
+    Name = "Hide KillFeed", Default = S.StreamerHideKillFeed or false,
     Callback = function(v) S.StreamerHideKillFeed = v end,
 })
-
 ui:MakeDivider(StreamerSection)
-ui:MakeLabel(StreamerSection, "🎭 Fake Info (то, что видят другие)")
-
-ui:MakeTextbox(StreamerSection, {
-    Name = "Fake Name",
-    Default = S.StreamerFakeName or "Streamer",
-    Placeholder = "Введи имя...",
-    Callback = function(v) S.StreamerFakeName = v end,
-})
-
-ui:MakeTextbox(StreamerSection, {
-    Name = "Fake XP",
-    Default = tostring(S.StreamerFakeXP or 1000000),
-    Placeholder = "XP",
-    Callback = function(v) S.StreamerFakeXP = tonumber(v) or 0 end,
-})
-
-ui:MakeTextbox(StreamerSection, {
-    Name = "Fake Level",
-    Default = tostring(S.StreamerFakeLevel or 1000),
-    Placeholder = "Level",
-    Callback = function(v) S.StreamerFakeLevel = tonumber(v) or 0 end,
-})
-
-ui:MakeTextbox(StreamerSection, {
-    Name = "Fake Money",
-    Default = tostring(S.StreamerFakeMoney or 1000000),
-    Placeholder = "Money",
-    Callback = function(v) S.StreamerFakeMoney = tonumber(v) or 0 end,
-})
+ui:MakeTextbox(StreamerSection, { Name = "Fake Name", Default = S.StreamerFakeName or "Streamer",
+    Callback = function(v) S.StreamerFakeName = v end })
+ui:MakeTextbox(StreamerSection, { Name = "Fake XP", Default = tostring(S.StreamerFakeXP or 1000000),
+    Callback = function(v) S.StreamerFakeXP = tonumber(v) or 0 end })
+ui:MakeTextbox(StreamerSection, { Name = "Fake Level", Default = tostring(S.StreamerFakeLevel or 1000),
+    Callback = function(v) S.StreamerFakeLevel = tonumber(v) or 0 end })
+ui:MakeTextbox(StreamerSection, { Name = "Fake Money", Default = tostring(S.StreamerFakeMoney or 1000000),
+    Callback = function(v) S.StreamerFakeMoney = tonumber(v) or 0 end })
 
 -- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ 6. ONLINE ═════════════════════════════════
+-- 6. ONLINE
 -- ═══════════════════════════════════════════════════════════════════
 local OnlineTab = ui:MakeTab("ONLINE")
-
-local OnlineSection = ui:MakeSection(OnlineTab, "👥 Игроки онлайн (через Supabase)")
+local OnlineSection = ui:MakeSection(OnlineTab, "👥 Players Online")
 
 local OnlineDropdown = ui:MakeDropdown(OnlineSection, {
-    Name = "Список онлайн",
-    Options = {"Загрузка..."},
-    Default = "Загрузка...",
-    Callback = function(v) end,
+    Name = "Список онлайн", Options = {"Загрузка..."}, Default = "Загрузка...",
 })
-
 local OnlineCount = ui:MakeLabel(OnlineSection, "Всего онлайн: ...")
 
 ui:MakeButton(OnlineSection, {
     Name = "🔄 Refresh Online List",
-    Subtext = "Обновить список игроков",
     Callback = function()
         if F.FetchOnlineUsers then
             local users = F.FetchOnlineUsers()
             local names = {}
             for _, u in ipairs(users) do
-                table.insert(names, u.name .. " (" .. (u.role or "User") .. ")")
+                table.insert(names, (u.name or "?") .. " (" .. (u.role or "User") .. ")")
             end
             if #names == 0 then names = {"Никого нет"} end
-            if OnlineDropdown.SetOptions then OnlineDropdown:SetOptions(names) end
+            OnlineDropdown:SetOptions(names)
             OnlineCount:Set("Всего онлайн: " .. #users)
-            if ui.Notify then
-                ui:Notify({ Title = "Online", Content = "Обновлено: " .. #users .. " игроков" })
-            end
         else
             OnlineCount:Set("Supabase не настроен")
         end
     end,
 })
 
--- Автообновление каждые 15 сек
 task.spawn(function()
     while task.wait(15) do
         pcall(function()
-            if F.FetchOnlineUsers and OnlineDropdown.SetOptions then
+            if F.FetchOnlineUsers then
                 local users = F.FetchOnlineUsers()
                 local names = {}
                 for _, u in ipairs(users) do
-                    table.insert(names, u.name .. " (" .. (u.role or "User") .. ")")
+                    table.insert(names, (u.name or "?") .. " (" .. (u.role or "User") .. ")")
                 end
                 if #names == 0 then names = {"Никого нет"} end
                 OnlineDropdown:SetOptions(names)
@@ -1855,155 +1608,72 @@ task.spawn(function()
 end)
 
 -- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ 7. ANNOUNCE ═══════════════════════════════
+-- 7. ANNOUNCE
 -- ═══════════════════════════════════════════════════════════════════
 local AnnounceTab = ui:MakeTab("ANNOUNCE")
-
-local AnnounceSection = ui:MakeSection(AnnounceTab, "📢 Объявления (DEV only)")
+local AnnounceSection = ui:MakeSection(AnnounceTab, "📢 Announcements (DEV only)")
 
 local AnnounceTitle = "Announcement"
-ui:MakeTextbox(AnnounceSection, {
-    Name = "Title",
-    Default = "Announcement",
-    Placeholder = "Заголовок объявления",
-    Callback = function(v) AnnounceTitle = v end,
-})
-
 local AnnounceText = ""
 ui:MakeTextbox(AnnounceSection, {
-    Name = "Text",
-    Default = "",
-    Placeholder = "Текст объявления...",
+    Name = "Title", Default = "Announcement", Placeholder = "Заголовок",
+    Callback = function(v) AnnounceTitle = v end,
+})
+ui:MakeTextbox(AnnounceSection, {
+    Name = "Text", Default = "", Placeholder = "Текст...",
     Callback = function(v) AnnounceText = v end,
 })
-
 ui:MakeButton(AnnounceSection, {
     Name = "📤 Send Announcement",
-    Subtext = "Отправить всем игрокам в игре",
     Callback = function()
-        if F.SendAnnouncement then
-            F.SendAnnouncement(AnnounceTitle, AnnounceText)
-        else
-            if ui.Notify then
-                ui:Notify({ Title = "Announce", Content = "Функция не загружена" })
-            end
-        end
+        if F.SendAnnouncement then F.SendAnnouncement(AnnounceTitle, AnnounceText) end
     end,
 })
-
 ui:MakeDivider(AnnounceSection)
-ui:MakeLabel(AnnounceSection, "⚠️ Отправлять объявления может только владелец скрипта")
+ui:MakeLabel(AnnounceSection, "⚠️ Только владелец скрипта может отправлять")
 
 -- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ 8. SETTINGS (продолжение) ═══════════════════
+-- 8. SETTINGS
 -- ═══════════════════════════════════════════════════════════════════
+local SettingsTab = ui:MakeTab("SETTINGS")
+local SettingsSection = ui:MakeSection(SettingsTab, "⚙️ Настройки")
 
-local SettingsGUISection = ui:MakeSection(SettingsTab, "⚙️ Настройки GUI")
-
-ui:MakeDropdown(SettingsGUISection, {
-    Name = "Theme",
-    Options = {"Dark", "Purple", "Red", "White"},
-    Default = Config.Theme,
-    Callback = function(v)
-        ui:SetTheme(v)
-        ui:Notify({ Title = "Theme", Content = "Тема: " .. v })
-    end,
+ui:MakeDropdown(SettingsSection, {
+    Name = "Тема", Options = {"Dark", "Purple", "Red", "White"},
+    Default = Config.Theme or "Dark",
+    Callback = function(v) ui:SetTheme(v) end,
 })
-
-ui:MakeKeybind(SettingsGUISection, {
-    Name = "Toggle GUI Keybind",
-    Default = Config.Keybind,
-    Callback = function(key)
-        Config.Keybind = key
-        ui.ToggleKey = Enum.KeyCode[key] or Enum.KeyCode.K
+ui:MakeKeybind(SettingsSection, {
+    Name = "Toggle Keybind", Default = Config.Keybind or "K",
+    Callback = function(v)
+        Config.Keybind = v
+        ui.ToggleKey = Enum.KeyCode[v] or Enum.KeyCode.K
         SaveConfig()
     end,
 })
-
-ui:MakeSlider(SettingsGUISection, {
-    Name = "Window Width",
-    Min = 400, Max = 1200, Default = Config.Size[1], Step = 10,
-    Suffix = " px",
-    Callback = function(v)
-        Config.Size[1] = v
-        if ui.MainFrame then
-            ui.MainFrame.Size = UDim2.new(0, v, 0, ui.MainFrame.Size.Y.Offset)
-        end
-        SaveConfig()
-    end,
+ui:MakeButton(SettingsSection, {
+    Name = "💾 Save Config",
+    Callback = function() SaveConfig(); ui:Notify({ Title = "Config", Content = "Сохранено" }) end,
 })
-
-ui:MakeSlider(SettingsGUISection, {
-    Name = "Window Height",
-    Min = 300, Max = 900, Default = Config.Size[2], Step = 10,
-    Suffix = " px",
-    Callback = function(v)
-        Config.Size[2] = v
-        if ui.MainFrame then
-            ui.MainFrame.Size = UDim2.new(0, ui.MainFrame.Size.X.Offset, 0, v)
-        end
-        SaveConfig()
-    end,
-})
-
-ui:MakeSlider(SettingsGUISection, {
-    Name = "GUI Opacity",
-    Min = 0.3, Max = 1, Default = Config.Opacity, Step = 0.05,
-    Callback = function(v)
-        Config.Opacity = v
-        if ui.MainFrame then
-            ui.MainFrame.BackgroundTransparency = 1 - v
-        end
-        SaveConfig()
-    end,
-})
-
-ui:MakeToggle(SettingsGUISection, {
-    Name = "Auto-Save Config",
-    Default = Config.AutoSave,
-    Callback = function(v)
-        Config.AutoSave = v
-        SaveConfig()
-    end,
-})
-
-ui:MakeDivider(SettingsGUISection)
-ui:MakeLabel(SettingsGUISection, "🔄 Сброс")
-
-ui:MakeButton(SettingsGUISection, {
-    Name = "Reset GUI",
-    Subtext = "Сбросить все настройки окна",
-    Danger = true,
+ui:MakeButton(SettingsSection, {
+    Name = "🗑️ Reset Config", Danger = true,
     Callback = function()
-        Config.Theme = "Dark"
-        Config.Keybind = "K"
-        Config.Size = {620, 440}
-        Config.Position = {0.5, 0.5}
-        Config.Opacity = 1
-        Config.AutoSave = true
-        SaveConfig()
-        ui:SetTheme("Dark")
-        ui:Notify({ Title = "Reset", Content = "Настройки сброшены. Перезагрузи скрипт." })
+        if delfile and isfile and isfile(CONFIG_FILE) then pcall(delfile, CONFIG_FILE) end
+        ui:Notify({ Title = "Config", Content = "Сброшено (перезайди)" })
+    end,
+})
+ui:MakeButton(SettingsSection, {
+    Name = "❌ Unload Script", Danger = true,
+    Callback = function()
+        if ui.ScreenGui then ui.ScreenGui:Destroy() end
+        F.Settings.HitboxExpand = false
+        if F.ResetAllHitboxes then F.ResetAllHitboxes() end
+        if F.StopNoclip then F.StopNoclip() end
+        if F.DisableFPSBooster then F.DisableFPSBooster() end
+        if F.CleanupFarm then F.CleanupFarm() end
     end,
 })
 
--- ═══════════════════════════════════════════════════════════════════
--- ══════════════════════ ЗАВЕРШЕНИЕ ════════════════════════════════
--- ═══════════════════════════════════════════════════════════════════
+ui:Notify({ Title = "Venture AOT", Content = "GUI загружен | " .. (_G.Venture.ExecutorName or "Executor"), Duration = 5 })
 
-ui:Notify({
-    Title = "VENTURE AOT",
-    Content = "GUI загружен! Keybind: " .. Config.Keybind .. " | Executor: " .. (_G.Venture.ExecutorName or "?"),
-    Duration = 6,
-})
-
--- Экспорт в _G для доступа из других файлов
-_G.Venture.UI = ui
-_G.Venture.GUI = Library
-
-print("[Venture GUI] Loaded successfully")
-print("  • Tabs: " .. #ui.Tabs)
-print("  • Theme: " .. Config.Theme)
-print("  • Keybind: " .. Config.Keybind)
-
-return ui
+print("[Venture GUI] Loaded (universal, no LinUI)")
